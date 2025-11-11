@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROMPTYY - Your AI Prompt Generator</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #333; 
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .container {
+            flex-grow: 1; 
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 25px;
+            background-color: #ffffff; 
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        header {
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        header p {
+            margin: 5px 0 0;
+            font-size: 1.1em;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box; 
+            font-size: 1em;
+            background-color: #fff; 
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #3498db;
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .output-area {
+            margin-top: 30px;
+            position: relative; /* Needed for copy button */
+        }
+        #output-prompt {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px dashed #bdc3c7;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 1.1em;
+            line-height: 1.5;
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            min-height: 100px;
+            color: #2c3e50;
+        }
+
+        #output-prompt.error {
+            color: #c0392b; 
+            background-color: #fce4e4; 
+            border-color: #e74c3c; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            font-weight: 600; 
+        }
+        
+        #copy-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 6px 12px;
+            font-size: 0.9em;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 0 6px 0 6px;
+            cursor: pointer;
+            display: none; /* Hide it initially */
+        }
+        #copy-button:hover {
+            background-color: #34495e;
+        }
+        
+        /* --- NEW: Ad Placeholder Style --- */
+        .ad-placeholder {
+            width: 100%;
+            max-width: 728px; /* Standard banner ad width */
+            height: 90px;     /* Standard banner ad height */
+            background-color: #f0f0f0;
+            border: 1px dashed #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 30px auto; /* Center it */
+            box-sizing: border-box;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #777; 
+            font-size: 0.9em;
+        }
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Welcome to PROMPTYY</h1>
+            <p>Select your field, enter an idea, and get an expert-level AI prompt.</p>
+        </header>
+
+        <form id="prompt-form">
+            <div class="form-group">
+                <label for="category">1. Select a Category</label>
+                <select id="category" name="category">
+                    <option value="general">General / Everyday Life</option>
+                    <option value="student">Student & Academic</option>
+                    <option value="creative">Creative & Artist</option>
+                    <option value="business">Business & Marketing</option>
+                    <option value="developer">Developer & Tech</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="topic">2. What do you need?</label>
+                <input type="text" id="topic" name="topic" placeholder="e.g., 'plan a 7-day trip to Goa', 'healthy dinner ideas'">
+            </div>
+            <button type="submit">Generate AI Prompt</button>
+        </form>
+
+        <div class="output-area">
+            <label for="output-prompt">Your Generated Prompt:</label>
+            <button id="copy-button">Copy</button> 
+            <pre id="output-prompt">Your new prompt will appear here...</pre>
+        </div>
+    </div> <div class="ad-placeholder">Your Ad Will Appear Here</div>
+
+    <footer>
+        <p>
+            <a href="https://github.com/muhammedbilal11" target="_blank">View Project on GitHub</a>
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("prompt-form");
+            const outputElement = document.getElementById("output-prompt");
+            const categoryDropdown = document.getElementById("category");
+            const topicInput = document.getElementById("topic");
+            const copyButton = document.getElementById("copy-button");
+
+            // Update placeholder logic
+            categoryDropdown.addEventListener('change', () => {
+                const selectedCategory = categoryDropdown.value;
+                let newPlaceholder = "";
+                switch (selectedCategory) {
+                    case "general":
+                        newPlaceholder = "e.g., 'plan a 7-day trip to Goa', 'healthy dinner ideas'";
+                        break;
+                    case "student":
+                        newPlaceholder = "e.g., 'explain python loops', 'summarize this article'";
+                        break;
+                    case "creative":
+                        newPlaceholder = "e.g., 'logo for a coffee shop', '10 story ideas'";
+                        break;
+                    case "business":
+                        newPlaceholder = "e.g., 'marketing slogans for a new app', 'write a sales email'";
+                        break;
+                    case "developer":
+                        newPlaceholder = "e.g., 'debug my react hook', 'write a dockerfile for node'";
+                        break;
+                    default:
+                        newPlaceholder = "What can I help you with today?";
+                }
+                topicInput.placeholder = newPlaceholder;
+            });
+
+            // Form submission logic
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault(); 
+                
+                const category = categoryDropdown.value;
+                const userNeed = topicInput.value;       
+                
+                outputElement.textContent = "Generating your advanced prompt... Please wait.";
+                outputElement.classList.remove('error'); 
+                copyButton.style.display = 'none'; // Hide button while loading
+
+                try {
+                    // This still points to your local server
+                    // REMEMBER: Change this to your Render URL before you deploy!
+                    const response = await fetch('http://localhost:3000/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            category: category, 
+                            userNeed: userNeed 
+                        }) 
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({})); 
+                        const serverError = errorData.error || `Server responded with status: ${response.status}`;
+                        throw new Error(`Failed to get prompt: ${serverError}`);
+                    }
+
+                    const data = await response.json();
+                    outputElement.textContent = data.generatedPrompt.trim();
+                    outputElement.classList.remove('error'); 
+                    copyButton.style.display = 'block'; // Show copy button on success
+                    copyButton.textContent = 'Copy'; // Reset button text
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    outputElement.textContent = 
+                        'Oops! It looks like our AI assistant is not reachable right now. ' +
+                        'Please ensure your PROMPTYY backend server is running in your terminal ' +
+                        '(type "node server.js" in your project folder) and try again. ' +
+                        'If the problem persists, please check your internet connection.';
+                    outputElement.classList.add('error'); 
+                    copyButton.style.display = 'none'; // Hide button on error
+                }
+            });
+
+            // Logic for the copy button
+            copyButton.addEventListener('click', () => {
+                const textToCopy = outputElement.textContent;
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+
+        });
+    </script>
+
+</body>
+</html>
