@@ -1,22 +1,43 @@
 require('dotenv').config();
 const express = require('express');
 
-// We use the standard 'openai' SDK
+// We use the standard 'openai' SDK for Groq API
 const { OpenAI } = require('openai'); 
 const cors = require('cors'); 
 const app = express();
 const port = 3000; 
 
-// --- NEW CLIENT INITIALIZATION FOR GROQ ---
-// We initialize the OpenAI client but point it to the Groq API endpoint.
-// It will automatically pick up the GROQ_API_KEY environment variable.
+// --- 1. CONFIGURE GROQ CLIENT ---
+// This initializes the client for the ultra-fast Groq API.
+// It automatically picks up the GROQ_API_KEY environment variable set on Render.
 const groq = new OpenAI({
-    baseURL: "https://api.groq.com/openai/v1", // Groq's standard endpoint
+    baseURL: "https://api.groq.com/openai/v1",
     apiKey: process.env.GROQ_API_KEY, 
 });
-// ------------------------------------------
+// ------------------------------------
 
-app.use(cors()); 
+// --- 2. CONFIGURE CORS FOR YOUR LIVE DOMAIN ---
+// This explicit setting solves the "CORS policy has been blocked" error.
+const allowedOrigin = 'https://promptyyai.netlify.app';
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests from your specific Netlify domain
+        if (origin === allowedOrigin) {
+            callback(null, true);
+        } 
+        // Allow requests with no origin (like local development or curl)
+        else if (!origin) {
+            callback(null, true);
+        }
+        // Deny all other origins (important for security)
+        else {
+            callback(new Error('Not allowed by CORS'), false);
+        }
+    }
+}));
+// ----------------------------------------------
+
 app.use(express.json()); 
 
 app.post('/generate', async (req, res) => {
@@ -27,7 +48,7 @@ app.post('/generate', async (req, res) => {
             return res.status(400).json({ error: 'category and userNeed are required' });
         }
 
-        // --- AI Persona Logic (Unchanged) ---
+        // --- 3. AI Persona Logic ---
         let expertPersona = "";
         switch (category) {
             case "student":
@@ -47,9 +68,8 @@ app.post('/generate', async (req, res) => {
                 expertPersona = "You are a helpful and highly skilled general assistant.";
                 break;
         }
-        // ------------------------------------
-
-        // The master prompt now dynamically includes the persona
+        
+        // Final Prompt Construction
         const masterPrompt = `
             ${expertPersona}
             
@@ -61,22 +81,22 @@ app.post('/generate', async (req, res) => {
             Return ONLY the generated prompt.
         `;
 
-        // --- NEW API CALL STRUCTURE (Groq) ---
+        // --- 4. GROQ API Call ---
         const response = await groq.chat.completions.create({
-            // Groq's Llama model is optimized for high speed
+            // The currently supported and fast model
             model: "llama-3.1-8b-instant", 
             messages: [{ role: "user", content: masterPrompt }],
             temperature: 0.7, 
         });
         
-        // Extract the text from the new response format
         const generatedPromptText = response.choices[0].message.content;
 
         res.json({ generatedPrompt: generatedPromptText });
 
     } catch (error) {
         console.error('Error generating prompt:', error);
-        res.status(500).json({ error: 'Failed to generate prompt. Check your API key and connection.' });
+        // This response will be caught by the frontend
+        res.status(500).json({ error: 'Failed to generate prompt. Check Groq API key and Render logs.' });
     }
 });
 
