@@ -1,42 +1,24 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors'); // We are now using generic CORS to fix the deployment issue
+const { OpenAI } = require('openai'); // Used for Groq compatibility
 
-// We use the standard 'openai' SDK for Groq API
-const { OpenAI } = require('openai'); 
-const cors = require('cors'); 
 const app = express();
 const port = 3000; 
 
 // --- 1. CONFIGURE GROQ CLIENT ---
-// This initializes the client for the ultra-fast Groq API.
-// It automatically picks up the GROQ_API_KEY environment variable set on Render.
+// Initializes the client for the ultra-fast Groq API.
+// It uses the GROQ_API_KEY environment variable.
 const groq = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: process.env.GROQ_API_KEY, 
 });
 // ------------------------------------
 
-// --- 2. CONFIGURE CORS FOR YOUR LIVE DOMAIN ---
-// This explicit setting solves the "CORS policy has been blocked" error.
-const allowedOrigin = 'https://promptyyai.netlify.app';
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests from your specific Netlify domain
-        if (origin === allowedOrigin) {
-            callback(null, true);
-        } 
-        // Allow requests with no origin (like local development or curl)
-        else if (!origin) {
-            callback(null, true);
-        }
-        // Deny all other origins (important for security)
-        else {
-            callback(new Error('Not allowed by CORS'), false);
-        }
-    }
-}));
-// ----------------------------------------------
+// --- 2. BULLETPROOF CORS CONFIGURATION ---
+// This is the fix to allow your Netlify frontend to talk to the Render backend.
+app.use(cors()); 
+// -----------------------------------------
 
 app.use(express.json()); 
 
@@ -52,20 +34,20 @@ app.post('/generate', async (req, res) => {
         let expertPersona = "";
         switch (category) {
             case "student":
-                expertPersona = "You are an expert professor and learning coach.";
+                expertPersona = "You are an expert professor and learning coach focused on clarity, structure, and academic rigor.";
                 break;
             case "creative":
-                expertPersona = "You are an award-winning art director and creative strategist.";
+                expertPersona = "You are an award-winning art director and creative strategist, specializing in visual language and tone.";
                 break;
             case "business":
-                expertPersona = "You are a top-tier marketing executive and business consultant.";
+                expertPersona = "You are a top-tier marketing executive and business consultant, specializing in ROI and clear objectives.";
                 break;
             case "developer":
-                expertPersona = "You are a 10x principal software engineer and system architect.";
+                expertPersona = "You are a 10x principal software engineer and system architect, specializing in logic, efficiency, and specific language syntax.";
                 break;
             case "general":
             default:
-                expertPersona = "You are a helpful and highly skilled general assistant.";
+                expertPersona = "You are a helpful and highly skilled general assistant. Maintain a friendly yet professional tone.";
                 break;
         }
         
@@ -76,15 +58,16 @@ app.post('/generate', async (req, res) => {
             A user has a simple need: "${userNeed}".
             
             Your task is to generate a single, highly detailed, and professional prompt
-            that the user can copy and paste into another AI tool.
+            that the user can copy and paste into another AI tool (like a large language model or image generator).
+            
+            The generated prompt must be highly effective for the user's selected role.
             
             Return ONLY the generated prompt.
         `;
 
         // --- 4. GROQ API Call ---
         const response = await groq.chat.completions.create({
-            // The currently supported and fast model
-            model: "llama-3.1-8b-instant", 
+            model: "llama-3.1-8b-instant", // The current, fast model
             messages: [{ role: "user", content: masterPrompt }],
             temperature: 0.7, 
         });
@@ -95,7 +78,6 @@ app.post('/generate', async (req, res) => {
 
     } catch (error) {
         console.error('Error generating prompt:', error);
-        // This response will be caught by the frontend
         res.status(500).json({ error: 'Failed to generate prompt. Check Groq API key and Render logs.' });
     }
 });
